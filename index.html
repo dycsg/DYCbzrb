@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="./logo.ico" type="image/x-icon">
+    <title>班长日报生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+        }
+
+        .section h2 {
+            color: #2980b9;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 15px;
+            transition: border 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .report-container {
+            margin-top: 25px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .report-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .report-section {
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 15px;
+            font-style: italic;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upload-area:hover {
+            background-color: #f0f8ff;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-uploaded {
+            background-color: #2ecc71;
+        }
+
+        .status-pending {
+            background-color: #f39c12;
+        }
+
+        .print-btn {
+            background-color: #27ae60;
+            width: auto;
+            margin: 20px auto 0;
+            padding: 10px 25px;
+        }
+
+        .print-btn:hover {
+            background-color: #219653;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-icon {
+            margin-right: 10px;
+            color: #3498db;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>班长日报生成器</h1>
+
+        <div class="section">
+            <h2>数据上传</h2>
+            <div class="form-group">
+                <div id="uploadArea" class="upload-area">
+                    <p>点击或拖拽Excel文件到这里上传</p>
+                    <p class="file-info">支持多sheet的Excel文件</p>
+                </div>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" style="display: none;">
+                <div id="uploadStatus" class="file-info">
+                    <span class="status-indicator status-pending"></span>等待上传文件
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>筛选条件</h2>
+            <div class="form-group">
+                <label for="leaderName">选择班长姓名：</label>
+                <select id="leaderName">
+                    <option value="">-- 请选择班长 --</option>
+                </select>
+            </div>
+            <button id="generateReport">生成日报</button>
+        </div>
+
+        <div id="reportContainer" class="report-container hidden">
+            <div class="report-header">
+                <h2>班长日报</h2>
+                <p id="reportDate"></p>
+                <p>班长：<span id="reportLeaderName"></span></p>
+            </div>
+
+            <div class="report-section">
+                <div class="section-title">
+                    <span class="section-icon">📊</span>
+                    <h3>焊口数据</h3>
+                </div>
+                <div id="weldData" class="no-data">无相关数据</div>
+            </div>
+
+            <div class="report-section">
+                <div class="section-title">
+                    <span class="section-icon">🔧</span>
+                    <h3>一阶段数据</h3>
+                </div>
+                <div id="stage1Data" class="no-data">无相关数据</div>
+            </div>
+
+            <div class="report-section">
+                <div class="section-title">
+                    <span class="section-icon">🏗️</span>
+                    <h3>二阶段安装数据</h3>
+                </div>
+                <div id="stage2InstallData" class="no-data">无相关数据</div>
+            </div>
+
+            <div class="report-section">
+                <div class="section-title">
+                    <span class="section-icon">🔩</span>
+                    <h3>二阶段预制数据</h3>
+                </div>
+                <div id="stage2PrefabData" class="no-data">无相关数据</div>
+            </div>
+
+            <button id="printReport" class="print-btn">打印日报</button>
+        </div>
+    </div>
+
+    <!-- 引入SheetJS库用于处理Excel文件 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // 全局变量存储Excel数据
+        let excelData = {};
+        let leaderNames = [];
+
+        // 页面元素
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const leaderNameSelect = document.getElementById('leaderName');
+        const generateReportBtn = document.getElementById('generateReport');
+        const printReportBtn = document.getElementById('printReport');
+        const reportContainer = document.getElementById('reportContainer');
+        const reportDate = document.getElementById('reportDate');
+        const reportLeaderName = document.getElementById('reportLeaderName');
+        const weldData = document.getElementById('weldData');
+        const stage1Data = document.getElementById('stage1Data');
+        const stage2InstallData = document.getElementById('stage2InstallData');
+        const stage2PrefabData = document.getElementById('stage2PrefabData');
+
+        // 上传区域点击事件
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // 文件选择事件
+        fileInput.addEventListener('change', handleFileUpload);
+
+        // 拖放事件
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#f0f8ff';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.backgroundColor = '';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '';
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload();
+            }
+        });
+
+        // 处理文件上传
+        function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    // 清空之前的数据
+                    excelData = {};
+                    leaderNames = [];
+
+                    // 处理每个sheet
+                    workbook.SheetNames.forEach(sheetName => {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        excelData[sheetName] = jsonData;
+
+                        // 提取班长姓名
+                        if (jsonData.length > 0) {
+                            // 假设班长姓名在"班长"或"负责人"列
+                            const leaderKey = Object.keys(jsonData[0]).find(key =>
+                                key.includes('班长') || key.includes('负责人') || key.includes('姓名')
+                            );
+
+                            if (leaderKey) {
+                                jsonData.forEach(row => {
+                                    if (row[leaderKey] && !leaderNames.includes(row[leaderKey])) {
+                                        leaderNames.push(row[leaderKey]);
+                                    }
+                                });
+                            }
+                        }
+                    });
+
+                    // 更新班长姓名下拉框
+                    updateLeaderSelect();
+
+                    // 更新上传区域显示
+                    uploadArea.innerHTML = `<p>已上传: ${file.name}</p><p class="file-info">共 ${workbook.SheetNames.length} 个sheet</p>`;
+                    uploadStatus.innerHTML = `<span class="status-indicator status-uploaded"></span>文件已上传，共 ${workbook.SheetNames.length} 个sheet`;
+
+                    alert('文件上传成功！');
+                } catch (error) {
+                    console.error('Error processing file:', error);
+                    alert('文件处理出错，请确保上传的是有效的Excel文件。');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 更新班长姓名下拉框
+        function updateLeaderSelect() {
+            leaderNameSelect.innerHTML = '<option value="">-- 请选择班长 --</option>';
+            leaderNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                leaderNameSelect.appendChild(option);
+            });
+        }
+
+        // 生成报告事件
+        generateReportBtn.addEventListener('click', () => {
+            const selectedLeader = leaderNameSelect.value;
+            if (!selectedLeader) {
+                alert('请选择班长姓名！');
+                return;
+            }
+
+            if (Object.keys(excelData).length === 0) {
+                alert('请先上传Excel文件！');
+                return;
+            }
+
+            generateReport(selectedLeader);
+        });
+
+        // 打印报告事件
+        printReportBtn.addEventListener('click', () => {
+            window.print();
+        });
+
+        // 生成报告
+        function generateReport(leaderName) {
+            // 设置报告日期和班长姓名
+            const now = new Date();
+            reportDate.textContent = `生成日期: ${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+            reportLeaderName.textContent = leaderName;
+
+            // 筛选数据并生成表格
+            displayWeldData(leaderName);
+            displayStage1Data(leaderName);
+            displayStage2InstallData(leaderName);
+            displayStage2PrefabData(leaderName);
+
+            // 显示报告容器
+            reportContainer.classList.remove('hidden');
+        }
+
+        // 显示焊口数据
+        function displayWeldData(leaderName) {
+            // 查找匹配的sheet（支持模糊匹配）
+            const matchedSheet = Object.keys(excelData).find(key =>
+                key.includes('焊口')
+            );
+
+            if (!matchedSheet || excelData[matchedSheet].length === 0) {
+                weldData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            const data = excelData[matchedSheet];
+            const firstRow = data[0];
+
+            // 查找班长姓名列
+            const leaderKey = Object.keys(firstRow).find(key =>
+                key.includes('班长') || key.includes('负责人') || key.includes('姓名')
+            );
+
+            if (!leaderKey) {
+                weldData.innerHTML = '<div class="no-data">数据中未找到班长姓名列</div>';
+                return;
+            }
+
+            // 筛选数据
+            const filteredData = data.filter(row => row[leaderKey] === leaderName);
+
+            if (filteredData.length === 0) {
+                weldData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            // 创建表格
+            const table = document.createElement('table');
+
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            // 焊口数据需要的列：区域列，房间号列，等轴图列，焊口号列，焊口级别列
+            const weldHeaders = ['区域', '房间号', '等轴图', '焊口号', '焊口级别'];
+
+            weldHeaders.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表格内容
+            const tbody = document.createElement('tbody');
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                weldHeaders.forEach(header => {
+                    const td = document.createElement('td');
+                    // 尝试找到匹配的列（支持模糊匹配）
+                    const columnKey = Object.keys(row).find(key =>
+                        key.includes(header)
+                    );
+                    td.textContent = columnKey && row[columnKey] !== undefined && row[columnKey] !== null ? row[columnKey] : '';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+
+            // 清空容器并添加表格
+            weldData.innerHTML = '';
+            weldData.appendChild(table);
+        }
+
+        // 显示一阶段数据
+        function displayStage1Data(leaderName) {
+            // 查找匹配的sheet（支持模糊匹配）
+            const matchedSheet = Object.keys(excelData).find(key =>
+                key.includes('一阶段')
+            );
+
+            if (!matchedSheet || excelData[matchedSheet].length === 0) {
+                stage1Data.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            const data = excelData[matchedSheet];
+            const firstRow = data[0];
+
+            // 查找班长姓名列
+            const leaderKey = Object.keys(firstRow).find(key =>
+                key.includes('班长') || key.includes('负责人') || key.includes('姓名')
+            );
+
+            if (!leaderKey) {
+                stage1Data.innerHTML = '<div class="no-data">数据中未找到班长姓名列</div>';
+                return;
+            }
+
+            // 筛选数据
+            const filteredData = data.filter(row => row[leaderKey] === leaderName);
+
+            if (filteredData.length === 0) {
+                stage1Data.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            // 创建表格
+            const table = document.createElement('table');
+
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            // 一阶段数据需要的列：区域列，房间号列，支架号列，支架级别列
+            const stage1Headers = ['区域', '房间号', '支架号', '支架级别'];
+
+            stage1Headers.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表格内容
+            const tbody = document.createElement('tbody');
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                stage1Headers.forEach(header => {
+                    const td = document.createElement('td');
+                    // 尝试找到匹配的列（支持模糊匹配）
+                    const columnKey = Object.keys(row).find(key =>
+                        key.includes(header)
+                    );
+                    td.textContent = columnKey && row[columnKey] !== undefined && row[columnKey] !== null ? row[columnKey] : '';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+
+            // 清空容器并添加表格
+            stage1Data.innerHTML = '';
+            stage1Data.appendChild(table);
+        }
+
+        // 显示二阶段安装数据
+        function displayStage2InstallData(leaderName) {
+            // 查找匹配的sheet（支持模糊匹配）
+            const matchedSheet = Object.keys(excelData).find(key =>
+                key.includes('二阶段安装') || (key.includes('二阶段') && key.includes('安装'))
+            );
+
+            if (!matchedSheet || excelData[matchedSheet].length === 0) {
+                stage2InstallData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            const data = excelData[matchedSheet];
+            const firstRow = data[0];
+
+            // 查找班长姓名列
+            const leaderKey = Object.keys(firstRow).find(key =>
+                key.includes('班长') || key.includes('负责人') || key.includes('姓名')
+            );
+
+            if (!leaderKey) {
+                stage2InstallData.innerHTML = '<div class="no-data">数据中未找到班长姓名列</div>';
+                return;
+            }
+
+            // 筛选数据
+            const filteredData = data.filter(row => row[leaderKey] === leaderName);
+
+            if (filteredData.length === 0) {
+                stage2InstallData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            // 创建表格
+            const table = document.createElement('table');
+
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            // 二阶段安装数据需要的列：区域列，房间号列，支架号列，支架级别列，支架支点列
+            const stage2InstallHeaders = ['区域', '房间号', '支架号', '支架级别', '安装支点'];
+
+            stage2InstallHeaders.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表格内容
+            const tbody = document.createElement('tbody');
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                stage2InstallHeaders.forEach(header => {
+                    const td = document.createElement('td');
+                    // 尝试找到匹配的列（支持模糊匹配）
+                    let columnKey;
+                    if (header === '安装支点') {
+                        // 对于安装支点，查找包含"支点"的列
+                        columnKey = Object.keys(row).find(key =>
+                            key.includes('支点')
+                        );
+                    } else {
+                        columnKey = Object.keys(row).find(key =>
+                            key.includes(header)
+                        );
+                    }
+                    td.textContent = columnKey && row[columnKey] !== undefined && row[columnKey] !== null ? row[columnKey] : '';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+
+            // 清空容器并添加表格
+            stage2InstallData.innerHTML = '';
+            stage2InstallData.appendChild(table);
+        }
+
+        // 显示二阶段预制数据
+        function displayStage2PrefabData(leaderName) {
+            // 查找匹配的sheet（支持模糊匹配）
+            const matchedSheet = Object.keys(excelData).find(key =>
+                key.includes('二阶段预制') || (key.includes('二阶段') && key.includes('预制'))
+            );
+
+            if (!matchedSheet || excelData[matchedSheet].length === 0) {
+                stage2PrefabData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            const data = excelData[matchedSheet];
+            const firstRow = data[0];
+
+            // 查找班长姓名列
+            const leaderKey = Object.keys(firstRow).find(key =>
+                key.includes('班长') || key.includes('负责人') || key.includes('姓名')
+            );
+
+            if (!leaderKey) {
+                stage2PrefabData.innerHTML = '<div class="no-data">数据中未找到班长姓名列</div>';
+                return;
+            }
+
+            // 筛选数据
+            const filteredData = data.filter(row => row[leaderKey] === leaderName);
+
+            if (filteredData.length === 0) {
+                stage2PrefabData.innerHTML = '<div class="no-data">无相关数据</div>';
+                return;
+            }
+
+            // 创建表格
+            const table = document.createElement('table');
+
+            // 创建表头
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            // 二阶段预制数据需要的列：区域列，房间号列，支架号列，支架级别列，支架支点列
+            const stage2PrefabHeaders = ['区域', '房间号', '支架号', '支架级别', '预制支点'];
+
+            stage2PrefabHeaders.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // 创建表格内容
+            const tbody = document.createElement('tbody');
+
+            filteredData.forEach(row => {
+                const tr = document.createElement('tr');
+
+                stage2PrefabHeaders.forEach(header => {
+                    const td = document.createElement('td');
+                    // 尝试找到匹配的列（支持模糊匹配）
+                    let columnKey;
+                    if (header === '预制支点') {
+                        // 对于预制支点，查找包含"支点"的列
+                        columnKey = Object.keys(row).find(key =>
+                            key.includes('支点')
+                        );
+                    } else {
+                        columnKey = Object.keys(row).find(key =>
+                            key.includes(header)
+                        );
+                    }
+                    td.textContent = columnKey && row[columnKey] !== undefined && row[columnKey] !== null ? row[columnKey] : '';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+
+            // 清空容器并添加表格
+            stage2PrefabData.innerHTML = '';
+            stage2PrefabData.appendChild(table);
+        }
+    </script>
+</body>
+
+</html>
